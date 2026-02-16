@@ -49,10 +49,30 @@ public class MathFoldingOptimization implements BaseOptimization {
                 return applyPlus(constant1, constant2, expressionType);
             case "MINUS":
                 return applyMinus(constant1, constant2, expressionType);
+            case "DIVIDE":
+                return applyDivide(constant1, constant2, expressionType);
             default:
                 System.out.println("BUG: unsupported operation " + op);
         }
         return null;
+    }
+
+    private AsmConstant applyDivide(AsmConstant constant1, AsmConstant constant2, String expressionType) {
+        switch (expressionType) {
+            case "i32", "u32", "i64", "u64", "i16", "u16", "i8", "u8":
+                return applyDivideIntTyped(constant1, constant2);
+            case "f32", "f64":
+                return new AsmConstant(constant1.type, Double.toString(Double.parseDouble(constant1.value) / Double.parseDouble(constant2.value)));
+            default:
+                System.out.println("BUG: unsupported type " + expressionType);
+                return null;
+        }
+    }
+
+    private AsmConstant applyDivideIntTyped(AsmConstant constant1, AsmConstant constant2) {
+        BigInteger leftBigInt = new BigInteger(constant1.value);
+        BigInteger rightBigInt = new BigInteger(constant2.value);
+        return new AsmConstant(constant1.type, leftBigInt.divide(rightBigInt).toString());
     }
 
     private AsmConstant applyPlus(AsmConstant constant1, AsmConstant constant2, String expressionType) {
@@ -61,10 +81,10 @@ public class MathFoldingOptimization implements BaseOptimization {
                 return applyPlusIntTyped(constant1, constant2);
             case "f32", "f64":
                 return new AsmConstant(constant1.type, Double.toString(Double.parseDouble(constant1.value) + Double.parseDouble(constant2.value)));
-                        default:
+            default:
                 System.out.println("BUG: unsupported type " + expressionType);
+                return null;
         }
-        return null;
     }
 
     private AsmConstant applyPlusIntTyped(AsmConstant constant1, AsmConstant constant2) {
@@ -82,8 +102,8 @@ public class MathFoldingOptimization implements BaseOptimization {
                 return new AsmConstant(constant1.type, Double.toString(Double.parseDouble(constant1.value) - Double.parseDouble(constant2.value)));
             default:
                 System.out.println("BUG: unsupported type " + expressionType);
+                return null;
         }
-        return null;
     }
 
     private AsmConstant applyMinusIntTyped(AsmConstant constant1, AsmConstant constant2) {
@@ -104,6 +124,7 @@ public class MathFoldingOptimization implements BaseOptimization {
         }
         return null;
     }
+
     private AsmConstant applyMultiplyIntTyped(AsmConstant constant1, AsmConstant constant2) {
 
         var leftBigInt = new BigInteger(constant1.value);
