@@ -6,9 +6,10 @@ import com.germaniumhq.caffc.compiler.model.asm.opc.AsmInstruction;
 import com.germaniumhq.caffc.compiler.model.asm.opc.AsmMath;
 import com.germaniumhq.caffc.compiler.model.asm.vars.AsmConstant;
 
+import java.math.BigInteger;
 import java.util.List;
 
-public class MathFoldingOptimization extends BaseOptimization {
+public class MathFoldingOptimization implements BaseOptimization {
     @Override
     public boolean optimize(Function function) {
         boolean found = false;
@@ -34,6 +35,7 @@ public class MathFoldingOptimization extends BaseOptimization {
 
         return found;
     }
+
     boolean isConstantMathOp(AsmInstruction op) {
         return op instanceof AsmMath asmMath && asmMath.value1 instanceof AsmConstant && asmMath.value2 instanceof AsmConstant;
     }
@@ -45,6 +47,8 @@ public class MathFoldingOptimization extends BaseOptimization {
                 return applyMultiply(constant1, constant2, expressionType);
             case "PLUS":
                 return applyPlus(constant1, constant2, expressionType);
+            case "MINUS":
+                return applyMinus(constant1, constant2, expressionType);
             default:
                 System.out.println("BUG: unsupported operation " + op);
         }
@@ -53,21 +57,57 @@ public class MathFoldingOptimization extends BaseOptimization {
 
     private AsmConstant applyPlus(AsmConstant constant1, AsmConstant constant2, String expressionType) {
         switch (expressionType) {
-            case "i32":
-                return new AsmConstant(constant1.type, Integer.toString(Integer.parseInt(constant1.value) + Integer.parseInt(constant2.value)));
+            case "i32", "u32", "i64", "u64", "i16", "u16", "i8", "u8":
+                return applyPlusIntTyped(constant1, constant2);
+            case "f32", "f64":
+                return new AsmConstant(constant1.type, Double.toString(Double.parseDouble(constant1.value) + Double.parseDouble(constant2.value)));
+                        default:
+                System.out.println("BUG: unsupported type " + expressionType);
+        }
+        return null;
+    }
+
+    private AsmConstant applyPlusIntTyped(AsmConstant constant1, AsmConstant constant2) {
+
+        var leftBigInt = new BigInteger(constant1.value);
+        var rightBigInt = new BigInteger(constant2.value);
+        return new AsmConstant(constant1.type, leftBigInt.add(rightBigInt).toString());
+    }
+
+    private AsmConstant applyMinus(AsmConstant constant1, AsmConstant constant2, String expressionType) {
+        switch (expressionType) {
+            case "i32", "u32", "i64", "u64", "i16", "u16", "i8", "u8":
+                return applyMinusIntTyped(constant1, constant2);
+            case "f32", "f64":
+                return new AsmConstant(constant1.type, Double.toString(Double.parseDouble(constant1.value) - Double.parseDouble(constant2.value)));
             default:
                 System.out.println("BUG: unsupported type " + expressionType);
         }
         return null;
     }
 
+    private AsmConstant applyMinusIntTyped(AsmConstant constant1, AsmConstant constant2) {
+
+        var leftBigInt = new BigInteger(constant1.value);
+        var rightBigInt = new BigInteger(constant2.value);
+        return new AsmConstant(constant1.type, leftBigInt.subtract(rightBigInt).toString());
+    }
+
     private AsmConstant applyMultiply(AsmConstant constant1, AsmConstant constant2, String expressionType) {
         switch (expressionType) {
-            case "i32":
-                return new AsmConstant(constant1.type, Integer.toString(Integer.parseInt(constant1.value) * Integer.parseInt(constant2.value)));
+            case "i32", "u32", "i64", "u64", "i16", "u16", "i8", "u8":
+                return applyMultiplyIntTyped(constant1, constant2);
+            case "f32", "f64":
+                return new AsmConstant(constant1.type, Double.toString(Double.parseDouble(constant1.value) * Double.parseDouble(constant2.value)));
             default:
                 System.out.println("BUG: unsupported type " + expressionType);
         }
         return null;
+    }
+    private AsmConstant applyMultiplyIntTyped(AsmConstant constant1, AsmConstant constant2) {
+
+        var leftBigInt = new BigInteger(constant1.value);
+        var rightBigInt = new BigInteger(constant2.value);
+        return new AsmConstant(constant1.type, leftBigInt.multiply(rightBigInt).toString());
     }
 }

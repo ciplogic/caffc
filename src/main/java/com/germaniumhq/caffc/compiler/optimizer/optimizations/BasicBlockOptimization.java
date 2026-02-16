@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class BasicBlockOptimization extends BaseOptimization {
+public class BasicBlockOptimization implements BaseOptimization {
     List<String> supportedOperations = List.of("AsmAssign", "AsmMath", "AsmReturn");
 
     @Override
